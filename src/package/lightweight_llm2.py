@@ -1,0 +1,110 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+# Load training data
+data = pd.read_excel("X:/AUR/11.2024/25.11.2024/corelatie,hs,retail,season/llm_test/labeled_products.xlsx")  # Add columns: Description, Vendor, Person, Code
+data = data.dropna(subset=["Description", "Vendor", "Person", "Code"])  # Ensure no missing data
+
+# Prepare features
+X = data[['Description', 'Vendor', 'Person']]
+y = data['Code']
+
+# Text vectorization for Description
+vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
+X_text = vectorizer.fit_transform(X['Description'])
+
+# Combine text features with other categorical features
+X_combined = pd.concat([
+    pd.DataFrame(X_text.toarray(), columns=vectorizer.get_feature_names_out()),
+    pd.get_dummies(X['Vendor'], prefix='Vendor'),
+    pd.get_dummies(X['Person'], prefix='Person')
+], axis=1)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X_combined, y, test_size=0.2, random_state=42)
+
+# Train the model
+model = RandomForestClassifier(n_estimators=200, random_state=42)
+model.fit(X_train, y_train)
+
+# Test the model
+y_pred = model.predict(X_test)
+print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}")
+
+# Load new items
+new_products = pd.read_excel("X:/AUR/11.2024/25.11.2024/corelatie,hs,retail,season/llm_test/new_products.xlsx")  # Add columns: Description, Vendor, Person
+new_products = new_products.dropna(subset=["Description", "Vendor", "Person"])
+
+# Transform new data
+new_text = vectorizer.transform(new_products['Description'])
+new_combined = pd.concat([
+    pd.DataFrame(new_text.toarray(), columns=vectorizer.get_feature_names_out()),
+    pd.get_dummies(new_products['Vendor'], prefix='Vendor'),
+    pd.get_dummies(new_products['Person'], prefix='Person')
+], axis=1).reindex(columns=X_combined.columns, fill_value=0)  # Ensure columns match
+
+# Predict codes
+new_products['Predicted_Code'] = model.predict(new_combined)
+
+# Define valid codes for each person
+person_code_lists = {
+    'KRISTINA': [111,112,113,114,115,121,122,123,124,125,131,133,141,142,143,144,145,146,147,148,149,151,152,161,162,171,172,173,
+1410,14111,14112,14113,411,412,413,421,431,432,433,434,435,436,437,438,439,441,442,443,444,445,446,447,448,449,451,452,453,454,
+455,456,457,458,461,462,463,464,471,472,473,474,475,476,477,481,482,483,484,486,485,487,491,492,493,494,495,496,497,4101,4102,
+4103,4310,4311,4312,4411,711,712,713,714,721,723,724,1011,1012,1013,1014,1015,1016,1021,1022,1023,1024,1025,1026,1031,1032,1033,
+1034,1035,1036,1037,1038,1039,1041,1042,1043,1044,1045,1046,1047,1048,1049,1051,1052,1053,1061,1062,1063,1064,1065,1071,1072,
+1073,1081,1082,1083,10310,10311,10312,10313,1213,1214,1215,1221,1222,1223,1224,1225,1226,1227,1231,1232,1233,1234,1411,1412,1413,
+1414,1421,1422,1423,1425,1427,1428,1429,1431,1432,1433,1434,1435,1436,1437,1438,1441,1442,1443,1444,14210,14211,1511,1512,1513,
+1521,1522,1523,1524,1531,1532,1533,1541,1542,1543,1544,1551,1552,1561,1562,1571,1572,1711,1712,1713,1714,1715,1716,1717,1718,
+1721,1722,1723,1724,1725,1731,1732,1733,1734,1741,1742,2011,2012,2013,2021,2022,2023,2024,2025,2026,2027,2028,2029,2031,2032,
+2033,2034,2035,2036,2041,2042,2043,2051,2052,2053,2061,2062,2063,2064,2065,2066,20210,2111,2112,2121,2122,2123,2124,2131,2132,
+2133,2141,2142,2143,2311,2312,2313,2314,2321,2322,2323,2331,2332,2333,2334,2611,2612,2613,2621,2622,2631,2632,2633,2634,2635,
+2641,2642,2643,2645,2651,2652,2653,2654,2661,2662,2663,2664,2665,2666,2667,2671,2672,2673,2681,2682,2691,2692,26101,26102,2711,
+2712,2713,2714,2721,2722,2723,2724,2725,2726,2727,2731,2732,2733,2734,2735,2741,2742,2743,1811,1812,1813,1814,1815,1821,1822,
+1823,1824,1825,1826,1831,1832,1833,1834,1835,1841,1842,1843,1844,1845,1846,1847,1851,1852,1853],
+    'ALINA': [511,512,513,514,515,516,517,518,519,521,522,523,531,532,533,534,535,536,537,541,542,543,551,552,553,561,562,563,
+564,571,572,581,582,583,591,592,593,594,595,596,5101,5102,5103,5104,5105,5106,5107,5108,5111,5112,5113,5114,5115,5121,5122,5131,
+5132,5133,611,612,613,614,615,621,622,623,624,631,632,633,634,641,642,643,651,652,653,654,655,656,657,658,659,661,662,663,664,
+665,671,672,673,674,676,681,682,6510,6511,1611,1612,1613,1614,1615,1616,1621,1622,1623,1624,1625,1626,1627,1628,1629,1631,1632,
+1633,1634,1635,1641,1642,1643,1644,1645,1646,1647,1648,1651,1652,1653,1654,1655,1656,1657,1658,1659,1661,1662,1663,1664,1665,
+1666,1671,1672,1673,1674,1681,1682,1691,1692,1693,1694,16101,16102,16103,16104,16112,16113,16114,16115,16116,16117,16121,16122,
+16123,16124,16125,16131,16132,16133,16134,16135,16136,16210,16211,16212,16213,16214,16111,2811,2812,2813,2814,2815,2821,2822,
+2831,2832,2841,2842,2851,2852,2861,2862,2871,2872,2873,2874,2881,2882,2883,2884,2911,2921,2922,2923,2931,2932,2941,2942,2951,
+2961,2962,2971,2972,2981,2982,2991,2992,2993,2994,2996],
+    'ANDREEA': [211,212,213,214,215,216,221,222,223,224,231,232,233,234,241,242,243,244,245,246,311,312,313,314,321,322,323,324,
+325,331,332,333,334,335,336,337,338,339,341,342,343,344,345,351,352,353,354,355,356,357,358,361,362,363,364,371,372,373,374,375,
+376,377,378,379,381,382,383,384,385,386,387,388,391,392,393,394,395,396,397,398,399,3101,3102,3103,3104,3105,3106,3111,3112,3114,
+3121,3122,3123,3124,3125,3131,3132,3133,3134,3135,3141,3142,3710,3711,3910,3911,3912,3913,3914,3915,811,812,813,814,821,822,823,
+831,832,834,835,841,842,851,852,853,861,862,871,872,873,874,881,882,891,892,893,894,895,896,8101,911,912,913,914,915,916,917,921,
+922,923,924,925,926,927,928,929,931,932,933,934,935,936,941,942,943,944,945,946,947,948,949,951,952,953,954,955,956,957,1111,1112,
+1113,1121,1122,1131,1132,1133,1134,1135,1136,1137,1138,1139,1141,1142,1143,1144,1145,1146,1147,1151,1161,1162,1163,1164,1165,
+1181,1182,1311,1312,1313,1321,1322,1323,1324,1331,1332,1333,1334,1341,1342,1343,1344,1345,1351,1352,1353,1354,1355,1361,1362,
+1363,1364,1371,1372,1911,1912,1913,1921,1922,1923,1924,1925,1931,1932,1933,1934,1935,1936,1937,1938,1939,1941,1942,1943,1951,
+1952,19310,19311,19312,2211,2212,2213,2221,2222,2223,2231,2232,2233,2241,2251,2511,2512,2521,2522,2523,2531,2532,2533,2534,2535,
+2536,2537,2541,2542,2543,2544,2545,2546,2551,2552,2553,2554,2411,2412,2413,2414,2421,2422,2423,2424,2425,2426,2431,2432,2441,2442,]
+}
+
+# Function to enforce valid codes based on the person
+def enforce_code_list(row):
+    person = row['Person']
+    code = row['Predicted_Code']
+    valid_codes = person_code_lists.get(person, [])
+    return code if code in valid_codes else None  # Return None if code is invalid
+
+def assign_frequent_code(row):
+    if pd.isna(row['Predicted_Code']):
+        person = row['Person']
+        valid_codes = person_code_lists.get(person, [])
+        return valid_codes[0] if valid_codes else None  # Assign the first valid code
+    return row['Predicted_Code']
+
+# Apply the constraint
+new_products['Predicted_Code'] = new_products.apply(enforce_code_list, axis=1)
+# new_products['Predicted_Code'] = new_products.apply(assign_frequent_code, axis=1)
+
+# Save predictions
+new_products.to_excel("X:/AUR/11.2024/25.11.2024/corelatie,hs,retail,season/llm_test/result/updated_products.xlsx", index=False)
+print("Predicted codes saved to 'updated_products.xlsx'")
