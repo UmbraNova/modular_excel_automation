@@ -6,15 +6,12 @@ import os
 # Filter the DataFrame to only include the desired columns
 
 
-
-
 def process_file(file_path, output_ws, column_name_variants=["description", "denumire produs", "name"]):
     
     wb = openpyxl.load_workbook(file_path)
     ws = wb.active
     
     header_seq = find_table_header(ws)
-
 
 def find_table_header(ws):
     count_to_pass = 0
@@ -26,28 +23,30 @@ def find_table_header(ws):
                     print(f"Letter: [{cell.column_letter}] | Value: [{cell.value}]")
                     # col_mapping["description"] = cell.column_letter
                     count_to_pass += 1
-        if count_to_pass >= 3:  # if 3 matches found, means this is the table header
+        if count_to_pass >= 4:  # if n num of matches found, means this is the table header
             break
         else:
-            pass
+            pass  # TODO: reset the col_mapping
 
 
 def in_required_columns(cell_value):
     required_columns = {
-        "sku_net_weight_col": ["greutate neta", "gerutate neta"],
-        "sku_description_col": ["denumire produs", "denumire produse"],
-        "sku_gross_weight_col": ["greutate bruta", "gerutate bruta"],
+        "sku_net_weight_col": ["greutate neta", "gerutate neta", "net", "neta", "netto"],
+        "sku_description_col": ["denumire produs", "denumire produse", "description", "descriere"],
+        "sku_gross_weight_col": ["greutate bruta", "gerutate bruta", "brutto", "brut", "gross"],
         "sku_length_col": ["lungime", "length"],
         "sku_width_col": ["latime", "width"],
         "sku_height_col": ["inalatime", "height"],
         "sku_bax_col": ["bax", "baxaj", "baxare", "qty/bax"],
         "sku_ean_col": ["ean", "cod ean", "barcod", "barcode"],
-        "sku_quantity_col": ["cantitate", "quantity", "cantitate estimativa"]
+        "sku_quantity_col": ["cantitate", "quantity", "cantitate estimativa"],
+        "sku_tariff_col": ["vamal", "hs-code", "hscode", "tariff no.", "tariff", "hs code"]
     }
+
 
     for values in required_columns.values():
         for i_val in values:
-            cell_value = cell_value.replace(",", " ").replace(".", " ").replace("/", " ")
+            cell_value = cell_value.replace(",", " ").replace(".", " ")
             if cell_value in i_val or i_val in cell_value:
                 return True
 
@@ -65,8 +64,6 @@ def process_folders(base_folder, output_template):
 
     output_wb.save(output_template)
     print(f"All processed and saved in {output_template}")
-
-
 
 
 

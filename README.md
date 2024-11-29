@@ -5,7 +5,7 @@ main info:
 # - need extra report to get data from
 # - need modification
 
-The unique key will be the barcode, if the product has multiple barcodes
+The unique key will be the barcode, if the product has multiple barcodes. Or... it doesn't have a barcode...
 
 ----------------------------------------------------------------------------------------------------------------------
 
@@ -41,10 +41,3 @@ Tax Bus. Posting Gr. (Price): CL_INT
 ----------------------------------------------------------------------------------------------------------------------
 
 Should compare net and gross weight. The smaller one is net, also should compare to the description if finds 50 GR or any numbers with GR/ML next to them
-
-Keywords for weights: greutate, weight, net, brutto, brut, gross, neta
-Keywords for sizes: lungime, latime, inaltime, length, width, height
-Keywords for qty/bax: baxaj, qty/bax, (but no QTY!!)
-Keywords for HS-codes: cod vamal, HS, Tariff, Tariff No., HS code
-Keywords for description: description, descriere
-
